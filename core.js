@@ -894,7 +894,27 @@ class DiscordMCBot {
       this.mcBot.chat(msg.content);
     });
 
-    this.client.login(this.config.discordToken);
+    // --- Diagnostics: show why Discord login stalls (e.g. 429 / Cloudflare IP block on Render) ---
+    this.client.rest.on('rateLimited', (info) => {
+      this.log(`Discord REST rate limited: ${info.method} ${info.route} retry in ${info.timeToReset}ms (global=${info.global})`);
+    });
+    this.client.on('shardError', (err) => this.log(`Discord shard error: ${err.message}`));
+    this.client.on('shardDisconnect', (ev, id) => this.log(`Discord shard ${id} disconnected (code ${ev && ev.code})`));
+    this.client.on('invalidated', () => this.log('Discord session invalidated'));
+
+    this.log('Logging in to Discord...');
+    this.client.login(this.config.discordToken).catch(err => {
+      this.log(`Discord login FAILED: ${err.message}`);
+    });
+
+    // Watchdog: if Discord isn't ready in 30s, say so and start the Minecraft bot anyway
+    // (previously the MC bot only started after Discord 'ready', so a Discord stall = both offline)
+    setTimeout(() => {
+      if (!this.client.isReady()) {
+        this.log('Discord not ready after 30s - starting Minecraft bot without it.');
+        if (!this.manualStop) this.start('discord-timeout');
+      }
+    }, 30000);
   }
 
   async handleTerminalMessage(msg) {
