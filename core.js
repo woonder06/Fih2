@@ -902,6 +902,24 @@ class DiscordMCBot {
     this.client.on('shardDisconnect', (ev, id) => this.log(`Discord shard ${id} disconnected (code ${ev && ev.code})`));
     this.client.on('invalidated', () => this.log('Discord session invalidated'));
 
+    // Probe: can this server reach Discord's API at all? (status + Cloudflare ray id)
+    try {
+      const probe = require('https').get('https://discord.com/api/v10/gateway', { timeout: 10000 }, (r) => {
+        this.log(`Discord API probe -> HTTP ${r.statusCode} (cf-ray: ${r.headers['cf-ray'] || 'none'}, server: ${r.headers['server'] || 'n/a'})`);
+        r.resume();
+      });
+      probe.on('timeout', () => probe.destroy(new Error('timeout after 10s')));
+      probe.on('error', (e) => this.log(`Discord API probe FAILED: ${e.message}`));
+    } catch (e) {}
+
+    // Internal discord.js debug output (token redacted, capped at 80 lines)
+    let dbgCount = 0;
+    this.client.on('debug', (m) => {
+      if (dbgCount++ >= 80) return;
+      const clean = String(m).split(this.config.discordToken).join('***');
+      this.log(`[dc-debug] ${clean}`);
+    });
+
     this.log('Logging in to Discord...');
     this.client.login(this.config.discordToken).catch(err => {
       this.log(`Discord login FAILED: ${err.message}`);
