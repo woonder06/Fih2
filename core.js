@@ -1148,7 +1148,7 @@ class DiscordMCBot {
 
       this.navigatedOnSpawn = false;
 
-      // Once spawned and settled, suspend 3D physics collision calculations (drops CPU from 16% to < 2%)
+      // Once spawned and settled, suspend 3D physics collision calculations (drops CPU from 16% to < 2%).
       setTimeout(() => {
         if (this.mcBot && this.state === 'ONLINE') {
           this.mcBot.physicsEnabled = false;
