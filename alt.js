@@ -15,7 +15,7 @@ const altConfig = {
   commandPrefix: 'fih',
   wsPort: Number(process.env.B2_WS_PORT || 3001),
   defaultMode: 'prison',
-  // Auto-login command sent on join and reconnect
+  // Auto-login command sent on join and reconnect.
   loginCommand: process.env.MC_LOGIN_COMMAND || '', 
 
   autostart: true
